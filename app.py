@@ -1,5 +1,5 @@
 import streamlit as st
-from transformers import pipeline
+from transformers import MarianMTModel, MarianTokenizer
 
 # ── Konfiguracja strony ──────────────────────────────────────────────────────
 st.set_page_config(
@@ -30,7 +30,10 @@ st.divider()
 # ── Ładowanie modelu (cache) ──────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def load_translator():
-    return pipeline("translation", model="Helsinki-NLP/opus-mt-en-de")
+    model_name = "Helsinki-NLP/opus-mt-en-de"
+    tokenizer = MarianTokenizer.from_pretrained(model_name)
+    model = MarianMTModel.from_pretrained(model_name)
+    return tokenizer, model
 
 # ── Interfejs użytkownika ─────────────────────────────────────────────────────
 input_text = st.text_area(
@@ -48,9 +51,11 @@ if translate_btn:
     else:
         with st.spinner("⏳ Trwa tłumaczenie... proszę czekać."):
             try:
-                translator = load_translator()
-                result = translator(input_text, max_length=512)
-                translated = result[0]["translation_text"]
+                tokenizer, model = load_translator()
+
+                inputs = tokenizer(input_text, return_tensors="pt", padding=True)
+                translated_tokens = model.generate(**inputs)
+                translated = tokenizer.decode(translated_tokens[0], skip_special_tokens=True)
 
                 st.success("✅ Tłumaczenie zakończone pomyślnie!")
                 st.subheader("🇩🇪 Wynik tłumaczenia")
@@ -60,7 +65,6 @@ if translate_btn:
                     height=180,
                 )
 
-                # Przycisk kopiowania przez download
                 st.download_button(
                     label="💾 Pobierz wynik jako .txt",
                     data=translated,
