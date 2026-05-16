@@ -30,7 +30,7 @@ st.divider()
 # ── Ładowanie modelu (cache) ──────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def load_translator():
-    return pipeline("translation_en_to_de", model="Helsinki-NLP/opus-mt-en-de")
+    return pipeline("translation", model="Helsinki-NLP/opus-mt-en-de")
 
 # ── Interfejs użytkownika ─────────────────────────────────────────────────────
 input_text = st.text_area(
